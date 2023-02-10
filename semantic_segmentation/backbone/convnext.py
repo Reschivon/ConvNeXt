@@ -13,10 +13,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from timm.models.layers import trunc_normal_, DropPath
 
-# from mmcv_custom import load_checkpoint
-# from mmseg.utils import get_root_logger
-# from mmseg.models.builder import BACKBONES
-
 
 class Block(nn.Module):
     r""" ConvNeXt Block. There are two equivalent implementations:
@@ -55,7 +51,6 @@ class Block(nn.Module):
         x = input + self.drop_path(x)
         return x
 
-# @BACKBONES.register_module()
 class ConvNeXt(nn.Module):
     r""" ConvNeXt
         A PyTorch impl of : `A ConvNet for the 2020s`  -
@@ -70,7 +65,7 @@ class ConvNeXt(nn.Module):
         layer_scale_init_value (float): Init value for Layer Scale. Default: 1e-6.
         head_init_scale (float): Init scaling value for classifier weights and biases. Default: 1.
     """
-    def __init__(self, in_chans=3, depths=[3, 3, 9, 3], dims=[96, 192, 384, 1024],  # last dim was 768, changed for same size output
+    def __init__(self, in_chans=3, depths=[3, 3, 9, 3], dims=[96, 192, 384, 768], 
                  drop_path_rate=0., layer_scale_init_value=1e-6, out_indices=[0, 1, 2, 3],
                  ):
         super().__init__()
@@ -143,20 +138,16 @@ class ConvNeXt(nn.Module):
         outs = []
         for i in range(4):
             x = self.downsample_layers[i](x)
-            # print('\tstage', i, 'produces', x.shape)
             x = self.stages[i](x)
-            # print('\tstage', i, 'produces', x.shape)
             if i in self.out_indices:
                 norm_layer = getattr(self, f'norm{i}')
                 x_out = norm_layer(x)
-                # print('\tstage', i, 'norm produces', x_out.shape)
                 outs.append(x_out)
 
-        return tuple(outs)[-1]
+        return tuple(outs)
 
     def forward(self, x):
         x = self.forward_features(x)
-        # print('convnext produces output', x.shape)
         return x
 
 class LayerNorm(nn.Module):
